@@ -28,3 +28,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - File `.env` dan konfigurasi dotenv.
 - `package.json` dengan script dev (`npm run dev`) menggunakan `nodemon`.
 
+---
+
+## [1.1.0] - 2025-04-22
+### Added
+- CLI untuk generate template helper berdasarkan kategori (`utils index`).
+- Struktur folder helper berbasis kategori (contoh: `dateHelper`, `stringHelper`, dll).
+- File `utils/index.js` untuk centralized exports semua helper.
+- Script CLI `generate:helper` di dalam `package.json`.
+
+### Feature
+- **Order**
+  - method: GET | `/orders` => mendapatkan kumpulan data order
+  - method: GET | `/orders/:orderId` => mendapatkan data order berdasarkan nomor INV
+- **Pending**
+  - method: GET | `pendings` => mendapatkan kumpulan data pending
