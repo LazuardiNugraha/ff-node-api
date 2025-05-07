@@ -1,5 +1,6 @@
+const { update } = require('lodash');
 const connection = require('../config/database');
-const paginate = require('../utils/databaseHelper').paginate; // Import the paginate function from the helper file
+const { databaseHelper, stringHelper, dateHelper } = require('../utils'); // Import the helper functions from the utils file
 
 module.exports = {
   async getAllOrders(req, res) {
@@ -10,19 +11,23 @@ module.exports = {
       const baseQuery = `
         SELECT
           orders.*,
+          orders.created_at AS order_created_at,
+          orders.updated_at AS order_updated_at,
           order_logistics.*,
-          order_logistics.id AS logistic_id
+          order_logistics.id AS logistic_id,
+          order_logistics.created_at AS logistic_created_at,
+          order_logistics.updated_at AS logistic_updated_at
         FROM orders
         LEFT JOIN order_logistics ON orders.order_id = order_logistics.order_id
-      `
+      `;
 
       const countQuery = `
         SELECT COUNT(*) AS total
         FROM orders
         LEFT JOIN order_logistics ON orders.order_id = order_logistics.order_id
-      `
+      `;
 
-      const { data, pagination } = await paginate(connection, baseQuery, countQuery, [], page, perPage, req);
+      const { data, pagination } = await databaseHelper.paginate(connection, baseQuery, countQuery, [], page, perPage, req);
 
       const filteredResults = data.map((row) => {
         return {
@@ -56,7 +61,9 @@ module.exports = {
             logisticService: row.logistic_service,
             logisticStatus: row.omni_logistic_status,
             waybillNo: row.waybill_no,
-          }
+          },
+          createdAt: dateHelper.formatIndonesianDate(row.order_created_at),
+          updatedAt: dateHelper.formatIndonesianDate(row.order_updated_at),
         };
       });
 
@@ -66,8 +73,6 @@ module.exports = {
           pagination
         },
       });
-
-      // res.json({ data: filteredResults });
     } catch (error) {
       console.error('Error fetching orders:', error);
       res.status(500).json({ error: error.message });
@@ -86,7 +91,10 @@ module.exports = {
         });
       });
 
-      res.json({ data: results })
+      const row = results[0];
+      const formattedResult = await stringHelper.toCamelCaseKeys(row); // Assuming order_id is unique, we can take the first result
+
+      res.json({ data: formattedResult })
     } catch (error) {
       console.error('Error fetching order:', error);
       res.status(500).json({ error: error.message });
