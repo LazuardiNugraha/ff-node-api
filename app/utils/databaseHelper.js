@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 function generatePaginationLinks (baseUrl, page, limit, totalPages) {
   return {
     // first: `${baseUrl}?page=1&limit=${limit}`,
@@ -5,7 +7,55 @@ function generatePaginationLinks (baseUrl, page, limit, totalPages) {
     next: page < totalPages ? `${baseUrl}?page=${page + 1}&limit=${limit}` : null,
     // last: `${baseUrl}?page=${totalPages}&limit=${limit}`,
   };
+};
+
+function isPrefixed(key, prefixes) {
+  /**
+   * Cek apakah field mengandung prefix dari relasi tertentu
+   */
+
+  return prefixes.some((prefix) => key.startsWith(prefix + '_') || key.startsWith(prefix));
 }
+
+async function transformJoinedRow(row, mainKey, relations = {}) {
+  /**
+   * Mengubah baris hasil join menjadi objek nested berdasarkan prefix.
+   *
+   * @param {Object} row - Row hasil query SQL (flat object).
+   * @param {String} mainKey - Key utama (contoh: 'products').
+   * @param {Object} relations - Key relasi dan field-fieldnya, contoh: { lockerSize: ['id', 'name', 'created_at'] }
+   * @returns {Object} - Object nested hasil transformasi.
+   */
+
+  const result = {};
+
+  // Ambil field dari table utama
+  for (const key in row) {
+    if (!isPrefixed(key, Object.keys(relations))) {
+      result[key] = row[key];
+    }
+  }
+
+  // Proses relasi
+  for (const [relationKey, fields] of Object.entries(relations)) {
+    result[relationKey] = {};
+
+    for (const field of fields) {
+      const aliases = [
+        `${relationKey}_${field}`, // snake_case alias
+        `${relationKey}${_.upperFirst(_.camelCase(field))}`, // camelCase alias
+      ];
+
+      const actualKey = aliases.find((a) => row.hasOwnProperty(a));
+      if (actualKey) {
+        result[relationKey][field] = row[actualKey];
+      }
+    }
+  }
+
+  return result;
+}
+
 async function paginate (connection, baseQuery, countQuery, params = [], page = 1, perPage = 10, req = null) {
   /**
    * Helper untuk melakukan pagination ala Laravel di MySQL
@@ -68,6 +118,24 @@ async function paginate (connection, baseQuery, countQuery, params = [], page = 
   }
 };
 
+async function extractByPrefix(obj, prefix) {
+  const result = {};
+  for (const key in obj) {
+    if (key.startsWith(prefix + "_")) {
+      const newKey = key.replace(prefix + "_", "");
+      result[newKey] = obj[key];
+    }
+  }
+  return result;
+}
+
+async function generateSelectAlias(tableName, aliasPrefix, fields) {
+  return fields.map((field) => `${tableName}.${field} AS ${aliasPrefix}_${field}`).join(', ');
+}
+
 module.exports = {
   paginate,
+  extractByPrefix,
+  transformJoinedRow,
+  generateSelectAlias
 };
