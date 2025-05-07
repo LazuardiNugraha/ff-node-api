@@ -43,3 +43,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - method: GET | `/orders/:orderId` => mendapatkan data order berdasarkan nomor INV
 - **Pending**
   - method: GET | `pendings` => mendapatkan kumpulan data pending
+
+## [1.1.1] - 2025-05-07
+### Added
+- Penambahan fungsi stringHelper dan databaseHelper di `utils/index.js`.
+- **stringHelper**
+ - `parseCamelJsonColumn()` => Fungsi parsing data dari kolom table bertipe JSON.
+- **databaseHelper**
+ - `extractByPrefix()` => Fungsi untuk ekstraksi data setiap kolom dari sebuah database menjadi response JSON.
+ - `generateSelectAlias()` => Fungsi untuk generate alias otomatis dari selected column ke query builder.
+ - `transformJoinedRow()` => Mengubah baris hasil join menjadi objek nested berdasarkan prefix.
+ - `isPrefixed()` => Cek apakah field mengandung prefix dari relasi tertentu.
+
+### Changed
+- Flagging tipe data array untuk fungsi `toCamelCaseKeys` di `stringHelper`.
+- Pergantian format tahun menjadi **YYYY** untuk tahun di `dateHelper`.
+- Penyesuaian pemakaian helper di `OrderController`
+- Perubahan response error untuk fitur User
