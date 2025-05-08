@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   - method: GET | `/orders` => mendapatkan kumpulan data order
   - method: GET | `/orders/:orderId` => mendapatkan data order berdasarkan nomor INV
 - **Pending**
-  - method: GET | `pendings` => mendapatkan kumpulan data pending
+  - method: GET | `/pendings` => mendapatkan kumpulan data pending
 
 ## [1.1.1] - 2025-05-07
 ### Added
@@ -60,3 +60,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Pergantian format tahun menjadi **YYYY** untuk tahun di `dateHelper`.
 - Penyesuaian pemakaian helper di `OrderController`
 - Perubahan response error untuk fitur User
+
+## [1.2.0] - 2025-05-07
+## Added
+- **stringHelper**
+  - `pickAndRename()` => Generate manual alias untuk response data kolom yang diambil dari sebuah table
+  - `formatRelatedUser()` => Untuk format firstName dan lastName dari data table
+
+## Changed
+- Perubahan logika pengecekan `parseCamelJsonColumn` untuk data berbentuk array
+- Penambahan endpoint pending, product dan warehouse di `api.js`
+
+## Feature
+- **Pending**
+  - method: GET | `/pendings/:bookingId` => mendapatkan data pending berdasarkan nomor booking
+- **Product**
+  - method: GET | `/products` => mendapatkan kumpulan data produk
+  - method: GET | `/products/:id` => mendapatkan data produk berdasarkan id produk
+- **Warehouse**
+  - method: GET | `/warehouses` => mendapatkan kumpulan data gudang
+  - method: GET | `/warehouses/:id` => mendapatkan data gudang berdasarkan id gudang
