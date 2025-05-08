@@ -1,11 +1,5 @@
-// const { raw } = require('mysql2');
-const { format } = require('mysql2');
 const connection = require('../config/database');
-// const { update } = require('lodash');
-
-const paginate = require('../utils/databaseHelper').paginate; // Import the paginate function from the helper file
-const toCamelCaseKeys = require('../utils/stringHelper').toCamelCaseKeys; // Import the toCamelCaseKeys function from the helper file
-const formatIndonesianDate = require('../utils/dateHelper').formatIndonesianDate; // Import the formatIndonesianDate function from the helper file
+const { databaseHelper, stringHelper, dateHelper } = require('../utils'); // Import the helper functions from the utils file
 
 module.exports = {
   async getAllPendings(req, res) {
@@ -24,10 +18,10 @@ module.exports = {
         FROM pendings
       `;
 
-      const { data, pagination } = await paginate(connection, baseQuery, countQuery, [], page, perPage, req);
+      const { data, pagination } = await databaseHelper.paginate(connection, baseQuery, countQuery, [], page, perPage, req);
 
       const filteredResults = await Promise.all(data.map(async (row) => {
-        const formattedDetail = await toCamelCaseKeys(JSON.parse(row.detail || '{}'));
+        const formattedDetail = await stringHelper.toCamelCaseKeys(JSON.parse(row.detail || '{}'));
         const rawProduct = JSON.parse(row.product || '{}');
 
         return {
@@ -42,20 +36,20 @@ module.exports = {
           type: row.type,
           allocatedModel: row.allocated_model,
           allocatedId: row.allocated_id,
-          allocatedAt: formatIndonesianDate(row.allocated_at),
+          allocatedAt: dateHelper.formatIndonesianDate(row.allocated_at),
           isCanceled: row.isCanceled,
           lastStatus: row.last_status,
           camsStatus: row.cams_status,
-          lastTry: formatIndonesianDate(row.last_try),
+          lastTry: dateHelper.formatIndonesianDate(row.last_try),
           firstReason: row.first_reason,
           reason: row.reason,
           retry: row.retry,
           detail: formattedDetail,
           product: rawProduct,
           createdBy: row.created_by,
-          createdAt: formatIndonesianDate(row.created_at),
+          createdAt: dateHelper.formatIndonesianDate(row.created_at),
           updatedBy: row.updated_by,
-          updatedAt: formatIndonesianDate(row.updated_at),
+          updatedAt: dateHelper.formatIndonesianDate(row.updated_at),
         };
       }))
 
@@ -70,4 +64,38 @@ module.exports = {
       res.status(500).json({ error: error.message });
     }
   },
+
+  async getPendingByBookingId(req, res) {
+    try {
+      const bookingId = req.params.bookingId;
+
+      const results = await new Promise((resolve, reject) => {
+        connection.query(
+          `SELECT * FROM pendings WHERE booking_id = ?`, [bookingId], (error, results) => {
+            if (error) return reject(error);
+            resolve(results);
+          }
+        )
+      });
+
+      const row = results[0];
+      if (!row) {
+        return res.status(404).json({ error: 'Pending not found' });
+      }
+
+      const formattedResult = await stringHelper.toCamelCaseKeys(row);
+
+      formattedResult.detail = await stringHelper.parseCamelJsonColumn(row.detail);
+      formattedResult.product = await stringHelper.toCamelCaseKeys(JSON.parse(row.product || '{}'));
+
+      formattedResult.createdAt = dateHelper.formatIndonesianDate(formattedResult.createdAt);
+      formattedResult.updatedAt = dateHelper.formatIndonesianDate(formattedResult.updatedAt);
+      formattedResult.lastTry = dateHelper.formatIndonesianDate(formattedResult.lastTry);
+
+      res.json({ data: formattedResult });
+    } catch (error) {
+      console.error('Error fetching pending:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
 };
