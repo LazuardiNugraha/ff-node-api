@@ -15,13 +15,58 @@ async function toCamelCaseKeys(obj) {
 
 async function parseCamelJsonColumn(json) {
   try {
-    return await toCamelCaseKeys(JSON.parse(json || '{}'));
+    const parsed = JSON.parse(json || '[]');
+
+    // Jika hasilnya array of primitive (string/number/etc), langsung return
+    if (Array.isArray(parsed) && parsed.every((item) => typeof item !== 'object' || item === null)) {
+      return parsed;
+    }
+
+    return await toCamelCaseKeys(parsed);
   } catch (error) {
-    return {};
+    return [];
   }
+}
+
+function pickAndRename(source, mapping) {
+  if (!source || typeof source !== 'object') return {};
+
+  const result = {};
+  for (const [targetKey, sourceKey] of Object.entries(mapping)) {
+    result[targetKey] = source[sourceKey];
+  }
+
+  return result;
+}
+
+async function formatRelatedUser(rawUser) {
+  /**
+   * Format object relasi user (misal: pic, creator, approver)
+   * - Menggabungkan firstName + lastName menjadi name
+   * - Menghapus firstName dan lastName
+   * - Menjadikan null jika semua field null
+   * @param {Object} rawUser
+   * @returns {Object|null}
+   */
+
+  if (!rawUser) return null;
+
+  // const user = await toCamelCaseKeys(rawUser);
+  const { firstName, lastName, ...rest } = rawUser;
+
+  const name = [firstName || '', lastName || ''].join(' ').trim();
+
+  const cleanedUser = {
+    ...rest,
+    ...(name ? { name } : {}),
+  };
+
+  return cleanedUser;
 }
 
 module.exports = {
   toCamelCaseKeys,
-  parseCamelJsonColumn
+  parseCamelJsonColumn,
+  pickAndRename,
+  formatRelatedUser
 };
